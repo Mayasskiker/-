@@ -13,7 +13,7 @@
         }
 
         body {
-            font-family: 'Cairo', 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #0f2027;
             background: linear-gradient(to right, #2c5364, #203a43, #0f2027);
             color: var(--text-color);
@@ -36,7 +36,7 @@
             text-align: center;
         }
 
-        h1 { font-size: 2.5rem; letter-spacing: -1px; margin-bottom: 10px; color: var(--accent); text-shadow: 0 0 20px rgba(0,210,255,0.4); }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; color: var(--accent); text-shadow: 0 0 20px rgba(0,210,255,0.4); }
 
         .player-chip {
             display: inline-block;
@@ -56,14 +56,13 @@
             margin: 30px 0;
             cursor: pointer;
             border: 2px solid transparent;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.4s ease;
             position: relative;
-            overflow: hidden;
         }
 
         .game-card:hover { transform: scale(1.02); border-color: var(--accent); }
 
-        .role-text { font-size: 1.8rem; font-weight: 900; }
+        .role-text { font-size: 1.8rem; font-weight: bold; }
         .hint-text { display: block; font-size: 1rem; color: #888; margin-top: 15px; }
 
         input {
@@ -74,6 +73,7 @@
             background: rgba(255,255,255,0.1);
             color: white;
             outline: none;
+            font-size: 1rem;
         }
 
         button {
@@ -85,12 +85,15 @@
             background: var(--accent);
             color: #000;
             transition: 0.3s;
+            font-size: 1rem;
         }
+        
+        button:hover { opacity: 0.8; }
 
         #add-btn { border-radius: 0 15px 15px 0; }
-        .start-btn { width: 100%; margin-top: 20px; font-size: 1.2rem; background: #fff; }
+        .start-btn { width: 100%; margin-top: 20px; background: #fff; }
 
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
     </style>
 </head>
@@ -98,12 +101,12 @@
 
 <div class="container" id="setup-screen">
     <h1>برا السالفة 🤐</h1>
-    <p style="opacity: 0.7;">أدخل أسماء المحققين</p>
-    <div style="display: flex; justify-content: center;">
-        <input type="text" id="player-name" placeholder="اسم اللاعب...">
+    <p style="opacity: 0.7;">أدخل أسماء المحققين (3 على الأقل)</p>
+    <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+        <input type="text" id="player-name" placeholder="اسم اللاعب..." onkeypress="handleKeyPress(event)">
         <button id="add-btn" onclick="addPlayer()">إضافة</button>
     </div>
-    <div id="player-list" style="margin-top: 20px;"></div>
+    <div id="player-list"></div>
     <button id="start-btn" class="start-btn hidden" onclick="startGame()">تحضير السالفة 🚀</button>
 </div>
 
@@ -117,7 +120,6 @@
 </div>
 
 <script>
-    // مئات الخيارات مع تصنيفاتها (التلميحات)
     const database = [
         {item: "مستشفى", cat: "مكان عام"}, {item: "مدرسة", cat: "مكان عام"}, {item: "مطار", cat: "مكان سفر"},
         {item: "مطعم بخاري", cat: "مكان أكل"}, {item: "نادي رياضي", cat: "مكان نشاط"}, {item: "سينما", cat: "مكان ترفيه"},
@@ -137,12 +139,7 @@
         {item: "الثلج", cat: "طقس"}, {item: "العواصف", cat: "طقس"}, {item: "الأهرامات", cat: "معلم سياحي"},
         {item: "برج إيفل", cat: "معلم سياحي"}, {item: "الأسد", cat: "حيوان"}, {item: "الزرافة", cat: "حيوان"},
         {item: "كرة القدم", cat: "رياضة"}, {item: "التنس", cat: "رياضة"}, {item: "مظلة", cat: "شيء للحماية"}
-        // ... (يمكن زيادة القائمة هنا بنفس النمط)
     ];
-
-    // إضافة 100 خيار إضافي برمجياً لضمان "المئات"
-    const moreItems = ["محامي", "نجار", "محطة فضاء", "غسالة", "مكواة", "قطار", "غواصة", "بانكيك", "ببغاء", "كوالا", "اليابان", "مصر", "لندن", "تويتر", "إنستغرام", "مفك", "مطرقة", "خيمة", "بيانو", "كمان", "مجهر", "تلسكوب", "بريد", "مصعد", "درج"];
-    moreItems.forEach(i => database.push({item: i, cat: "شيء عام"}));
 
     let players = [];
     let outPlayer = "";
@@ -150,16 +147,36 @@
     let currentIndex = 0;
     let revealed = false;
 
+    function handleKeyPress(e) {
+        if (e.key === 'Enter') {
+            addPlayer();
+        }
+    }
+
     function addPlayer() {
-        const name = document.getElementById("player-name").value.trim();
-        if (name && !players.includes(name)) {
-            players.push(name);
-            const chip = document.createElement("div");
-            chip.className = "player-chip";
-            chip.innerText = name;
-            document.getElementById("player-list").appendChild(chip);
-            document.getElementById("player-name").value = "";
-            if (players.length >= 3) document.getElementById("start-btn").classList.remove("hidden");
+        const input = document.getElementById("player-name");
+        const name = input.value.trim();
+        
+        if (name === "") {
+            alert("الرجاء كتابة اسم اللاعب!");
+            return;
+        }
+        if (players.includes(name)) {
+            alert("الاسم موجود مسبقاً، اختر اسماً آخر!");
+            return;
+        }
+
+        players.push(name);
+        const chip = document.createElement("div");
+        chip.className = "player-chip";
+        chip.innerText = name;
+        document.getElementById("player-list").appendChild(chip);
+        
+        input.value = "";
+        input.focus();
+
+        if (players.length >= 3) {
+            document.getElementById("start-btn").classList.remove("hidden");
         }
     }
 
@@ -189,11 +206,11 @@
         if (players[currentIndex] === outPlayer) {
             mainText.innerText = "أنت برا السالفة! 🤫";
             hintText.innerText = `تلميح: السالفة عن (${selectedEntry.cat})`;
-            document.getElementById("role-card").style.borderColor = "#ff4757";
+            document.getElementById("role-card").style.borderColor = "#ff4757"; 
         } else {
             mainText.innerText = selectedEntry.item;
             hintText.innerText = `التصنيف: ${selectedEntry.cat}`;
-            document.getElementById("role-card").style.borderColor = var(--accent);
+            document.getElementById("role-card").style.borderColor = "var(--accent)"; 
         }
         
         revealed = true;
@@ -206,11 +223,14 @@
             showTurn();
         } else {
             alert("اكتمل التوزيع! ابدأوا الأسئلة الآن.");
-            if(confirm("جولة جديدة؟")) startGame(); else location.reload();
+            if(confirm("هل تريدون اللعب جولة جديدة بنفس اللاعبين؟")) {
+                startGame();
+            } else {
+                location.reload();
+            }
         }
     }
 </script>
 
 </body>
 </html>
-
