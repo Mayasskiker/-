@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>برا السالفة PRO - النسخة الاحترافية</title>
+    <title>برا السالفة PRO - النسخة النهائية</title>
     <style>
         :root {
             --accent: #00d2ff;
             --main-bg: #0f2027;
             --card-grad: linear-gradient(145deg, #2c3e50, #000000);
             --text-color: #e0e0e0;
+            --danger: #ff4757;
+            --success: #2ed573;
         }
 
         body {
@@ -36,7 +38,7 @@
             text-align: center;
         }
 
-        h1 { font-size: 2.5rem; margin-bottom: 10px; color: var(--accent); text-shadow: 0 0 20px rgba(0,210,255,0.4); }
+        h1 { font-size: 2.2rem; margin-bottom: 10px; color: var(--accent); text-shadow: 0 0 15px rgba(0,210,255,0.3); }
 
         .player-chip {
             display: inline-block;
@@ -51,22 +53,30 @@
 
         .game-card {
             background: var(--card-grad);
-            padding: 80px 20px;
+            padding: 60px 20px;
             border-radius: 25px;
             margin: 30px 0;
             cursor: pointer;
             border: 2px solid transparent;
-            transition: all 0.4s ease;
-            position: relative;
+            transition: all 0.3s ease;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
-        .game-card:hover { transform: scale(1.02); border-color: var(--accent); }
+        .role-text { font-size: 1.8rem; font-weight: bold; display: block; }
+        .hint-text { font-size: 1rem; color: #aaa; margin-top: 10px; display: block; }
 
-        .role-text { font-size: 1.8rem; font-weight: bold; }
-        .hint-text { display: block; font-size: 1rem; color: #888; margin-top: 15px; }
+        .input-group {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
 
         input {
-            width: 70%;
+            width: 65%;
             padding: 15px;
             border-radius: 15px 0 0 15px;
             border: none;
@@ -76,22 +86,28 @@
             font-size: 1rem;
         }
 
-        button {
-            padding: 15px 25px;
+        #add-btn {
+            padding: 15px 20px;
+            border-radius: 0 15px 15px 0;
+            border: none;
+            cursor: pointer;
+            background: var(--accent);
+            color: #000;
+            font-weight: bold;
+        }
+
+        .start-btn {
+            width: 100%;
+            padding: 15px;
             border-radius: 15px;
             border: none;
             cursor: pointer;
             font-weight: bold;
-            background: var(--accent);
+            background: #fff;
             color: #000;
-            transition: 0.3s;
-            font-size: 1rem;
+            font-size: 1.1rem;
+            margin-top: 10px;
         }
-        
-        button:hover { opacity: 0.8; }
-
-        #add-btn { border-radius: 0 15px 15px 0; }
-        .start-btn { width: 100%; margin-top: 20px; background: #fff; }
 
         .hidden { display: none !important; }
         @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
@@ -101,44 +117,61 @@
 
 <div class="container" id="setup-screen">
     <h1>برا السالفة 🤐</h1>
-    <p style="opacity: 0.7;">أدخل أسماء المحققين (3 على الأقل)</p>
-    <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-        <input type="text" id="player-name" placeholder="اسم اللاعب..." onkeypress="handleKeyPress(event)">
+    <p style="opacity: 0.7; margin-bottom: 20px;">أدخل أسماء اللاعبين (3 على الأقل)</p>
+    
+    <div class="input-group">
+        <input type="text" id="player-name" placeholder="اسم اللاعب..." onkeypress="if(event.key==='Enter') addPlayer()">
         <button id="add-btn" onclick="addPlayer()">إضافة</button>
     </div>
+
     <div id="player-list"></div>
-    <button id="start-btn" class="start-btn hidden" onclick="startGame()">تحضير السالفة 🚀</button>
+    <button id="start-btn" class="start-btn hidden" onclick="startGame()">ابدأ اللعبة 🚀</button>
 </div>
 
 <div class="container hidden" id="game-screen">
-    <h3 id="turn-title" style="color: var(--accent);"></h3>
+    <h3 id="turn-title" style="color: var(--accent); margin-bottom: 5px;"></h3>
     <div class="game-card" id="role-card" onclick="revealRole()">
         <span class="role-text" id="main-role-text">إكشف كرتك</span>
-        <span class="hint-text" id="hint-text">تأكد أن لا أحد يراقبك</span>
+        <span class="hint-text" id="hint-text">اضغط لعرض السالفة</span>
     </div>
     <button id="next-btn" class="start-btn hidden" onclick="nextPlayer()">اللاعب التالي ⬅️</button>
 </div>
 
 <script>
+    // قاعدة بيانات ضخمة مع التلميحات
     const database = [
         {item: "مستشفى", cat: "مكان عام"}, {item: "مدرسة", cat: "مكان عام"}, {item: "مطار", cat: "مكان سفر"},
         {item: "مطعم بخاري", cat: "مكان أكل"}, {item: "نادي رياضي", cat: "مكان نشاط"}, {item: "سينما", cat: "مكان ترفيه"},
         {item: "مخيم في البر", cat: "مكان رحلات"}, {item: "مكة", cat: "مدينة"}, {item: "المرّيخ", cat: "كوكب"},
         {item: "تحت البحر", cat: "مكان طبيعي"}, {item: "سيرك", cat: "مكان ترفيه"}, {item: "صيدلية", cat: "مكان صحي"},
         {item: "صالون حلاقة", cat: "مكان خدمات"}, {item: "فندق", cat: "مكان إقامة"}, {item: "عرس", cat: "مناسبة"},
-        {item: "سجن", cat: "مكان حكومي"}, {item: "كبسة", cat: "أكلة"}, {item: "شاورما", cat: "أكلة سريعة"},
+        {item: "سجن", cat: "مكان حكومي"}, {item: "كبسة", cat: "أكلة شعبية"}, {item: "شاورما", cat: "أكلة سريعة"},
         {item: "بيتزا", cat: "أكلة عالمية"}, {item: "سوشي", cat: "أكلة بحرية"}, {item: "برجر", cat: "أكلة سريعة"},
         {item: "ورق عنب", cat: "مقبلات"}, {item: "قهوة سعودية", cat: "مشروب"}, {item: "شاي", cat: "مشروب"},
-        {item: "ساعة يد", cat: "شيء يُلبس"}, {item: "نظارة", cat: "إكسسوار"}, {item: "كاميرا", cat: "جهاز إلكتروني"},
-        {item: "جوال", cat: "جهاز إلكتروني"}, {item: "مفتاح", cat: "جماد"}, {item: "عطر", cat: "جماد"},
+        {item: "ساعة يد", cat: "إكسسوار"}, {item: "نظارة", cat: "شيء يُلبس"}, {item: "كاميرا", cat: "إلكترونيات"},
+        {item: "جوال", cat: "إلكترونيات"}, {item: "مفتاح", cat: "جماد"}, {item: "عطر", cat: "جماد"},
         {item: "طيار", cat: "مهنة"}, {item: "طبيب أسنان", cat: "مهنة"}, {item: "مهندس", cat: "مهنة"},
         {item: "يوتيوبر", cat: "مهنة حديثة"}, {item: "بلاستيشن", cat: "تسلية"}, {item: "تيك توك", cat: "تطبيق"},
         {item: "سناب شات", cat: "تواصل"}, {item: "اختبارات", cat: "شيء مكروه"}, {item: "عيد الفطر", cat: "مناسبة"},
-        {item: "مسبح", cat: "مكان رياضي"}, {item: "مكتبة", cat: "مكان هادئ"}, {item: "غابة", cat: "طبيعة"},
-        {item: "منطاد", cat: "وسيلة نقل"}, {item: "دراجة", cat: "وسيلة نقل"}, {item: "فرن", cat: "أداة مطبخ"},
+        {item: "مسبح", cat: "رياضة"}, {item: "مكتبة", cat: "مكان هادئ"}, {item: "غابة", cat: "طبيعة"},
+        {item: "منطاد", cat: "وسيلة نقل"}, {item: "دراجة", cat: "وسيلة نقل"}, {item: "فرن", cat: "أدوات مطبخ"},
         {item: "الثلج", cat: "طقس"}, {item: "العواصف", cat: "طقس"}, {item: "الأهرامات", cat: "معلم سياحي"},
         {item: "برج إيفل", cat: "معلم سياحي"}, {item: "الأسد", cat: "حيوان"}, {item: "الزرافة", cat: "حيوان"},
-        {item: "كرة القدم", cat: "رياضة"}, {item: "التنس", cat: "رياضة"}, {item: "مظلة", cat: "شيء للحماية"}
+        {item: "كرة القدم", cat: "رياضة"}, {item: "التنس", cat: "رياضة"}, {item: "مظلة", cat: "جماد"},
+        {item: "اليابان", cat: "دولة"}, {item: "مصر", cat: "دولة"}, {item: "فرنسا", cat: "دولة"},
+        {item: "محامي", cat: "مهنة"}, {item: "نجار", cat: "مهنة"}, {item: "بائع", cat: "مهنة"},
+        {item: "قبعة", cat: "ملابس"}, {item: "حذاء", cat: "ملابس"}, {item: "خاتم", cat: "مجوهرات"},
+        {item: "بيانو", cat: "آلة موسيقية"}, {item: "جيتار", cat: "آلة موسيقية"}, {item: "طبلة", cat: "آلة موسيقية"},
+        {item: "مستودع", cat: "مكان"}, {item: "شاطئ", cat: "مكان طبيعي"}, {item: "صحراء", cat: "طبيعة"},
+        {item: "رائد فضاء", cat: "مهنة"}, {item: "غواص", cat: "مهنة/هواية"}, {item: "مصور", cat: "مهنة"},
+        {item: "آيسكريم", cat: "حلويات"}, {item: "كيك", cat: "حلويات"}, {item: "شوكولاتة", cat: "حلويات"},
+        {item: "بريد", cat: "خدمات"}, {item: "بنك", cat: "مكان مالي"}, {item: "بورصة", cat: "اقتصاد"},
+        {item: "قطار", cat: "مواصلات"}, {item: "سفينة", cat: "مواصلات"}, {item: "شاحنة", cat: "مواصلات"},
+        {item: "برق", cat: "ظاهرة طبيعية"}, {item: "زلزال", cat: "ظاهرة طبيعية"}, {item: "بركان", cat: "ظاهرة طبيعية"},
+        {item: "سيف", cat: "سلاح قديم"}, {item: "درع", cat: "دفاع"}, {item: "قوس وسهم", cat: "صيد"},
+        {item: "يوم الجمعة", cat: "زمن"}, {item: "رمضان", cat: "شهر/مناسبة"}, {item: "الصيف", cat: "فصل"},
+        {item: "ببغاء", cat: "طائر"}, {item: "نسر", cat: "طائر جارح"}, {item: "بطريق", cat: "حيوان قطبي"},
+        {item: "إندومي", cat: "أكلة سريعة"}, {item: "باشميل", cat: "أكلة"}, {item: "ملوخية", cat: "أكلة شعبية"}
     ];
 
     let players = [];
@@ -147,22 +180,13 @@
     let currentIndex = 0;
     let revealed = false;
 
-    function handleKeyPress(e) {
-        if (e.key === 'Enter') {
-            addPlayer();
-        }
-    }
-
     function addPlayer() {
         const input = document.getElementById("player-name");
         const name = input.value.trim();
         
-        if (name === "") {
-            alert("الرجاء كتابة اسم اللاعب!");
-            return;
-        }
+        if (name === "") return;
         if (players.includes(name)) {
-            alert("الاسم موجود مسبقاً، اختر اسماً آخر!");
+            alert("هذا الاسم موجود!");
             return;
         }
 
@@ -181,6 +205,7 @@
     }
 
     function startGame() {
+        if (players.length < 3) return;
         selectedEntry = database[Math.floor(Math.random() * database.length)];
         outPlayer = players[Math.floor(Math.random() * players.length)];
         currentIndex = 0;
@@ -193,7 +218,7 @@
         revealed = false;
         document.getElementById("turn-title").innerText = `دور اللاعب: ${players[currentIndex]}`;
         document.getElementById("main-role-text").innerText = "إكشف كرتك";
-        document.getElementById("hint-text").innerText = "إضغط لعرض السالفة";
+        document.getElementById("hint-text").innerText = "اضغط لعرض السالفة";
         document.getElementById("next-btn").classList.add("hidden");
         document.getElementById("role-card").style.borderColor = "transparent";
     }
@@ -202,15 +227,16 @@
         if (revealed) return;
         const mainText = document.getElementById("main-role-text");
         const hintText = document.getElementById("hint-text");
+        const card = document.getElementById("role-card");
         
         if (players[currentIndex] === outPlayer) {
             mainText.innerText = "أنت برا السالفة! 🤫";
             hintText.innerText = `تلميح: السالفة عن (${selectedEntry.cat})`;
-            document.getElementById("role-card").style.borderColor = "#ff4757"; 
+            card.style.borderColor = "var(--danger)"; 
         } else {
             mainText.innerText = selectedEntry.item;
             hintText.innerText = `التصنيف: ${selectedEntry.cat}`;
-            document.getElementById("role-card").style.borderColor = "var(--accent)"; 
+            card.style.borderColor = "var(--accent)"; 
         }
         
         revealed = true;
@@ -222,8 +248,8 @@
         if (currentIndex < players.length) {
             showTurn();
         } else {
-            alert("اكتمل التوزيع! ابدأوا الأسئلة الآن.");
-            if(confirm("هل تريدون اللعب جولة جديدة بنفس اللاعبين؟")) {
+            alert("تم توزيع السالفة! ابدأوا الأسئلة.");
+            if(confirm("هل تريدون جولة جديدة؟")) {
                 startGame();
             } else {
                 location.reload();
