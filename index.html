@@ -215,7 +215,10 @@
         
         // اختيار سالفة عشوائية من الـ database
         selectedEntry = database[Math.floor(Math.random() * database.length)];
-        outPlayer = players[Math.floor(Math.random() * players.length)];
+        // بدلاً من السطر القديم، استخدم هذا:
+const seed = new Date().getTime();
+outPlayer = players[Math.floor((Math.random() * seed) % players.length)];
+
         currentIndex = 0;
         
         document.getElementById("setup-screen").classList.add("hidden");
