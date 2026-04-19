@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>برا السالفة PRO - النسخة النهائية</title>
+    <title>برا السالفة PRO - النسخة النهائية الشغالة</title>
     <style>
         :root {
             --accent: #00d2ff;
@@ -78,7 +78,7 @@
         input {
             width: 65%;
             padding: 15px;
-            border-radius: 0 15px 15px 0; /* التعديل للـ RTL */
+            border-radius: 0 15px 15px 0;
             border: none;
             background: rgba(255,255,255,0.1);
             color: white;
@@ -88,7 +88,7 @@
 
         #add-btn {
             padding: 15px 20px;
-            border-radius: 15px 0 0 15px; /* التعديل للـ RTL */
+            border-radius: 15px 0 0 15px;
             border: none;
             cursor: pointer;
             background: var(--accent);
@@ -138,29 +138,44 @@
 </div>
 
 <script>
-    // قاعدة البيانات
-    const gameItems = [
+    // قاعدة البيانات المحدثة - تم تسميتها database لضمان التوافق مع بقية الكود
+    const database = [
+        // الأكل والمشروبات
         {item: "شاورما", cat: "أكلة سريعة"}, {item: "برغر", cat: "أكلة سريعة"}, {item: "بيتزا", cat: "أكلة عالمية"},
         {item: "فلافل", cat: "أكلة شعبية"}, {item: "ملوخية", cat: "أكلة شعبية"}, {item: "منسف", cat: "أكلة شعبية"},
         {item: "ورق عنب", cat: "مقبلات"}, {item: "كنافة", cat: "حلويات"}, {item: "آيس كريم", cat: "حلويات"},
         {item: "قهوة مرة", cat: "مشروب"}, {item: "متة", cat: "مشروب"}, {item: "سحلب", cat: "مشروب دافئ"},
         {item: "مانجو", cat: "فواكه"}, {item: "ثوم", cat: "خضروات/نكهة"},
+
+        // أدوات وأجهزة
         {item: "مكنسة", cat: "أدوات منزلية"}, {item: "غسالة", cat: "أجهزة كهربائية"}, {item: "مكواة", cat: "أجهزة كهربائية"},
         {item: "شاحن", cat: "إلكترونيات"}, {item: "ريموت", cat: "إلكترونيات"}, {item: "مشط", cat: "أدوات شخصية"},
         {item: "ساعة يد", cat: "إكسسوار"}, {item: "طنجرة ضغط", cat: "أدوات مطبخ"}, {item: "مقص أظافر", cat: "أدوات شخصية"},
+
+        // أماكن ومعالم
         {item: "صيدلية", cat: "مكان صحي"}, {item: "حلاق", cat: "مكان خدمات"}, {item: "مطار", cat: "مكان سفر"},
         {item: "حديقة حيوان", cat: "مكان ترفيه"}, {item: "سينما", cat: "مكان ترفيه"}, {item: "مصعد", cat: "بالمبنى"},
         {item: "بلكونة", cat: "بالبيت"}, {item: "دمشق", cat: "مدينة"}, {item: "مكة", cat: "مدينة دينية"},
+
+        // حيوانات وحشرات
         {item: "قطة", cat: "حيوان أليف"}, {item: "أسد", cat: "حيوان مفترس"}, {item: "جمل", cat: "حيوان"},
         {item: "زرافة", cat: "حيوان"}, {item: "صرصور", cat: "حشرات"}, {item: "نحلة", cat: "حشرات"},
         {item: "عنكبوت", cat: "حشرات"}, {item: "خفاش", cat: "حيوان/طائر"},
+
+        // مهن ووظائف
         {item: "طبيب أسنان", cat: "مهنة طبية"}, {item: "مهندس", cat: "مهنة"}, {item: "طيار", cat: "مهنة"},
         {item: "حلاق", cat: "مهنة"}, {item: "خياط", cat: "مهنة"}, {item: "رائد فضاء", cat: "مهنة"},
         {item: "يوتيوبر", cat: "مهنة حديثة"},
+
+        // رياضة وألعاب
         {item: "كرة قدم", cat: "رياضة جماعية"}, {item: "ملاكمة", cat: "رياضة قتالية"}, {item: "شطرنج", cat: "لعبة ذكاء"},
         {item: "ببجي", cat: "لعبة إلكترونية"}, {item: "غميضة", cat: "لعبة شعبية"}, {item: "شدة", cat: "لعبة ورق"},
+
+        // فئة المحترفين
         {item: "الصداع", cat: "حالة صحية"}, {item: "الجوع", cat: "شعور"}, {item: "الحظ", cat: "شيء معنوي"},
         {item: "النوم", cat: "حالة يومية"}, {item: "الاختبارات", cat: "فترة دراسية"}, {item: "الملل", cat: "شعور"},
+
+        // وسائل نقل وبراندات
         {item: "دراجة نارية", cat: "وسيلة نقل"}, {item: "غواصة", cat: "وسيلة نقل"}, {item: "توك توك", cat: "وسيلة نقل"},
         {item: "أبل", cat: "براند/شركة"}, {item: "مرسيدس", cat: "شركة سيارات"}, {item: "نايك", cat: "براند رياضي"}
     ];
@@ -198,9 +213,8 @@
     function startGame() {
         if (players.length < 3) return;
         
-        // اختيار سالفة عشوائية من القائمة المتاحة
-        selectedEntry = gameItems[Math.floor(Math.random() * gameItems.length)];
-        // اختيار لاعب عشوائي ليكون "برا السالفة"
+        // اختيار سالفة عشوائية من الـ database
+        selectedEntry = database[Math.floor(Math.random() * database.length)];
         outPlayer = players[Math.floor(Math.random() * players.length)];
         currentIndex = 0;
         
